@@ -42,23 +42,37 @@ const schema = z.object({
     .default([]),
 })
 
+const EMPTY_DEFAULTS: RecipeFormValues = {
+  title: '',
+  description: '',
+  source_url: '',
+  cover_image: '',
+  servings: 4,
+  prep_time_mins: null,
+  cook_time_mins: null,
+  cuisine: '',
+  tags: [],
+  ingredients: [],
+  steps: [],
+}
+
 function parsedToFormValues(parsed: ParsedRecipe): Partial<RecipeFormValues> {
   return {
-    title: parsed.title,
-    description: parsed.description,
-    servings: parsed.servings,
-    prep_time_mins: parsed.prep_time_mins,
-    cook_time_mins: parsed.cook_time_mins,
+    title: parsed.title ?? '',
+    description: parsed.description ?? '',
+    servings: parsed.servings ?? 4,
+    prep_time_mins: parsed.prep_time_mins ?? null,
+    cook_time_mins: parsed.cook_time_mins ?? null,
     cuisine: parsed.cuisine ?? '',
-    tags: parsed.tags,
+    tags: parsed.tags ?? [],
     cover_image: parsed.cover_image_url ?? '',
-    ingredients: parsed.ingredients.map((i) => ({
+    ingredients: (parsed.ingredients ?? []).map((i) => ({
       name: i.name,
       quantity: i.quantity?.toString() ?? '',
       unit: i.unit ?? '',
       notes: i.notes ?? '',
     })),
-    steps: parsed.steps,
+    steps: parsed.steps ?? [],
   }
 }
 
@@ -96,8 +110,8 @@ export function RecipeForm({ recipe, parsed, sourceType = 'manual', sourceUrl }:
   const defaultValues: RecipeFormValues = recipe
     ? recipeToFormValues(recipe)
     : parsed
-    ? { ...schema.parse({}), ...parsedToFormValues(parsed) }
-    : schema.parse({})
+    ? { ...EMPTY_DEFAULTS, ...parsedToFormValues(parsed) }
+    : EMPTY_DEFAULTS
 
   const methods = useForm<RecipeFormValues>({
     resolver: zodResolver(schema),
