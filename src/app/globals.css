@@ -44,7 +44,7 @@
 @layer base {
   html,
   body {
-    background: #2a241c;
+    background: var(--paper);
     min-height: 100dvh;
   }
   * {

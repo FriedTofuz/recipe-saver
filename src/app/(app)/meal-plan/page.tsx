@@ -8,22 +8,19 @@ export default async function MealPlanPage() {
   const [{ data: slots }, { data: recipes }] = await Promise.all([
     supabase
       .from('meal_plan_slots')
-      .select('*, recipe:recipes(id, title, cover_image, servings)')
+      .select('*, recipe:recipes(id, title, cover_image, servings, prep_time_mins, cook_time_mins, cuisine)')
       .order('week_start')
       .order('day_of_week'),
     supabase
       .from('recipes')
-      .select('id, title, cover_image, servings, cuisine, tags')
+      .select('id, title, cover_image, servings, cuisine, tags, prep_time_mins, cook_time_mins')
       .order('title'),
   ])
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Meal Plan</h1>
-      <MealPlanCalendar
-        initialSlots={(slots as any[]) ?? []}
-        recipes={(recipes as Recipe[]) ?? []}
-      />
-    </div>
+    <MealPlanCalendar
+      initialSlots={(slots as any[]) ?? []}
+      recipes={(recipes as Recipe[]) ?? []}
+    />
   )
 }
