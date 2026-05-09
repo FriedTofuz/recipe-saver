@@ -234,7 +234,7 @@ export default function CookbooksPage() {
               No cookbooks yet.
             </div>
             <p style={{ margin: '8px auto 0', maxWidth: 380, fontSize: 14, lineHeight: 1.5 }}>
-              Group recipes by mood, by season, or by who's coming to dinner.
+              Group recipes by mood, by season, or by who&apos;s coming to dinner.
             </p>
           </div>
         )}
