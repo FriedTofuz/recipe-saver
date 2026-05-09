@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { CoverWash, HandStars, recipeHue } from '@/components/paper'
+import { CoverWash, recipeHue } from '@/components/paper'
+import { RecipeCardMenu } from './RecipeCardMenu'
 import type { Recipe } from '@/types'
 
 interface RecipeCardProps {
@@ -14,17 +15,26 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   const hue = recipeHue(recipe.id)
 
   return (
-    <Link href={`/recipes/${recipe.id}`} style={{ textDecoration: 'none' }}>
-      <div
-        className="lift"
+    <div
+      className="lift"
+      style={{
+        background: 'rgba(255,255,255,.55)',
+        border: '1px solid var(--rule)',
+        borderRadius: 10,
+        overflow: 'visible',
+        position: 'relative',
+        boxShadow: 'var(--shadow-soft)',
+      }}
+    >
+      <RecipeCardMenu recipeId={recipe.id} recipeTitle={recipe.title} />
+      <Link
+        href={`/recipes/${recipe.id}`}
         style={{
-          background: 'rgba(255,255,255,.55)',
-          border: '1px solid var(--rule)',
+          textDecoration: 'none',
+          display: 'block',
+          color: 'inherit',
           borderRadius: 10,
           overflow: 'hidden',
-          cursor: 'pointer',
-          position: 'relative',
-          boxShadow: 'var(--shadow-soft)',
         }}
       >
         {/* Cover image or typographic placeholder */}
@@ -142,7 +152,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
             )}
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   )
 }

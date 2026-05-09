@@ -6,6 +6,21 @@ import { createClient } from '@/lib/supabase/server'
 import { getNutrition } from '@/lib/edamam'
 import type { RecipeFormValues } from '@/types'
 
+function cleanTags(tags: string[], cuisine: string): string[] {
+  const cuisineNorm = cuisine.trim().toLowerCase()
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of tags) {
+    const t = raw.trim().toLowerCase()
+    if (!t) continue
+    if (cuisineNorm && t === cuisineNorm) continue
+    if (seen.has(t)) continue
+    seen.add(t)
+    out.push(t)
+  }
+  return out
+}
+
 export async function createRecipe(
   values: RecipeFormValues,
   sourceType: 'url' | 'paste' | 'manual' = 'manual',
@@ -30,7 +45,7 @@ export async function createRecipe(
       prep_time_mins: values.prep_time_mins,
       cook_time_mins: values.cook_time_mins,
       cuisine: values.cuisine || null,
-      tags: values.tags,
+      tags: cleanTags(values.tags, values.cuisine),
     })
     .select()
     .single()
@@ -113,7 +128,7 @@ export async function updateRecipe(id: string, values: RecipeFormValues) {
       prep_time_mins: values.prep_time_mins,
       cook_time_mins: values.cook_time_mins,
       cuisine: values.cuisine || null,
-      tags: values.tags,
+      tags: cleanTags(values.tags, values.cuisine),
     })
     .eq('id', id)
     .eq('user_id', user.id)

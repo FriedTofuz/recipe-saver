@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { RecipeDetail } from '@/components/recipe/RecipeDetail'
-import { AddToCookbookDialog } from '@/components/cookbook/AddToCookbookDialog'
 import type { Recipe, Cookbook } from '@/types'
 
 interface RecipePageProps {
@@ -28,15 +27,10 @@ export default async function RecipePage({ params }: RecipePageProps) {
   const selectedCookbookIds = (recipeCookbooks ?? []).map((rc) => rc.cookbook_id)
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <AddToCookbookDialog
-          recipeId={recipe.id}
-          cookbooks={(cookbooks as Cookbook[]) ?? []}
-          selectedIds={selectedCookbookIds}
-        />
-      </div>
-      <RecipeDetail recipe={recipe as Recipe} />
-    </div>
+    <RecipeDetail
+      recipe={recipe as Recipe}
+      cookbooks={(cookbooks as Cookbook[]) ?? []}
+      cookbookIds={selectedCookbookIds}
+    />
   )
 }
