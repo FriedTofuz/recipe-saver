@@ -47,6 +47,27 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '4px 0 40px' }}>
+      {/* Back link */}
+      <Link
+        href="/dashboard"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '4px 0',
+          marginBottom: 14,
+          color: 'var(--ink-soft)',
+          fontSize: 13,
+          fontFamily: 'var(--font-sans)',
+          textDecoration: 'none',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+        Back to recipes
+      </Link>
+
       {/* Cover + title block */}
       <div
         style={{

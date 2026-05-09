@@ -1,9 +1,8 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { RecipeGrid } from '@/components/recipe/RecipeGrid'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { WavyRule } from '@/components/paper'
 import type { Recipe } from '@/types'
 
 interface CookbookPageProps {
@@ -36,21 +35,83 @@ export default async function CookbookPage({ params }: CookbookPageProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/cookbooks">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Cookbooks
-          </Link>
-        </Button>
-      </div>
-      <div>
-        <h1 className="text-2xl font-bold">{cookbook.name}</h1>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <Link
+        href="/cookbooks"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '4px 0',
+          marginBottom: 14,
+          color: 'var(--ink-soft)',
+          fontSize: 13,
+          fontFamily: 'var(--font-sans)',
+          textDecoration: 'none',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+        Back to cookbooks
+      </Link>
+
+      <header>
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          From the cookbook
+        </div>
+        <h1
+          style={{
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontWeight: 500,
+            fontSize: 52,
+            lineHeight: 1,
+            margin: '6px 0 0',
+            color: 'var(--ink)',
+          }}
+        >
+          <em style={{ fontStyle: 'italic' }}>{cookbook.name}</em>
+        </h1>
         {cookbook.description && (
-          <p className="text-muted-foreground mt-1">{cookbook.description}</p>
+          <p style={{ margin: '10px 0 0', color: 'var(--ink-soft)', maxWidth: 520, fontSize: 15, lineHeight: 1.5 }}>
+            {cookbook.description}
+          </p>
         )}
+      </header>
+
+      <WavyRule style={{ margin: '22px 0 28px' }} />
+
+      <div style={{ marginBottom: 18 }}>
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          Recipes
+        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontWeight: 500,
+            fontSize: 26,
+            margin: '4px 0 0',
+            color: 'var(--ink)',
+          }}
+        >
+          {recipes.length} {recipes.length === 1 ? 'recipe' : 'recipes'}
+        </h2>
       </div>
+
       <RecipeGrid recipes={recipes} />
     </div>
   )
