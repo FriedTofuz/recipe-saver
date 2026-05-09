@@ -126,18 +126,13 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
     })
   }
 
-  async function generateGroceryList() {
+  function generateGroceryList() {
     const weekSlots = slots.filter((s) => s.week_start === weekStartStr && s.recipe_id)
     if (weekSlots.length === 0) {
       toast.error('No recipes in this week')
       return
     }
-    const recipeIds = Array.from(
-      new Set(weekSlots.map((s) => s.recipe_id).filter((id): id is string => id !== null))
-    )
-    const params = new URLSearchParams()
-    recipeIds.forEach((id) => id && params.append('recipe', id))
-    router.push(`/grocery-lists?${params.toString()}`)
+    router.push('/grocery')
   }
 
   useEffect(() => {

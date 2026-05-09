@@ -9,7 +9,7 @@ const navItems = [
   { href: '/dashboard', label: 'Recipes', icon: LayoutDashboard },
   { href: '/cookbooks', label: 'Cookbooks', icon: BookOpen },
   { href: '/meal-plan', label: 'Meal Plan', icon: Calendar },
-  { href: '/grocery-lists', label: 'Groceries', icon: ShoppingCart },
+  { href: '/grocery', label: 'Groceries', icon: ShoppingCart },
 ]
 
 export function MobileNav() {

@@ -61,37 +61,37 @@ export interface MealPlanSlot {
   recipe?: Recipe
 }
 
-export interface GroceryList {
+export interface GroceryAisle {
   id: string
   user_id: string
   name: string
+  sort_order: number
   created_at: string
-  updated_at: string
-  items?: GroceryItem[]
 }
-
-export type AisleCategory =
-  | 'produce'
-  | 'dairy'
-  | 'meat'
-  | 'seafood'
-  | 'pantry'
-  | 'frozen'
-  | 'bakery'
-  | 'beverages'
-  | 'spices'
-  | 'other'
 
 export interface GroceryItem {
   id: string
-  grocery_list_id: string
+  user_id: string
+  aisle_id: string | null
   name: string
   quantity: string | null
   unit: string | null
-  aisle: AisleCategory
   source_recipe: string | null
   checked: boolean
   sort_order: number
+  created_at: string
+}
+
+export interface GrocerySuggestion {
+  /** Stable client-side id, e.g. `${recipeId}-${ingredientId}` */
+  key: string
+  recipe_id: string
+  recipe_title: string
+  /** ISO date strings on which the recipe is planned */
+  scheduled_dates: string[]
+  name: string
+  quantity: string | null
+  unit: string | null
 }
 
 export interface ParsedRecipe {
