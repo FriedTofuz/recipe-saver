@@ -6,7 +6,7 @@ const mainNav = [
   { href: '/dashboard',     label: 'Recipes',     doodle: 'fork'   as const },
   { href: '/cookbooks',     label: 'Cookbooks',   doodle: 'book'   as const },
   { href: '/meal-plan',     label: 'Meal Plan',   doodle: 'sprig'  as const },
-  { href: '/grocery-lists', label: 'Groceries',   doodle: 'tomato' as const },
+  { href: '/grocery',       label: 'Groceries',   doodle: 'tomato' as const },
   { href: '/recipes/new',   label: 'Add Recipe',  doodle: 'whisk'  as const },
 ]
 
