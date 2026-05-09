@@ -27,7 +27,7 @@ export async function Sidebar() {
       <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
         <nav className="space-y-1">
           {mainNav.map((item) => (
-            <SidebarLink key={item.href} href={item.href} icon={item.icon}>
+            <SidebarLink key={item.href} href={item.href} icon={<item.icon className="h-4 w-4 shrink-0" />}>
               {item.label}
             </SidebarLink>
           ))}
@@ -44,7 +44,7 @@ export async function Sidebar() {
           </div>
           <nav className="space-y-1">
             {(cookbooks ?? []).map((cb) => (
-              <SidebarLink key={cb.id} href={`/cookbooks/${cb.id}`} icon={BookOpen}>
+              <SidebarLink key={cb.id} href={`/cookbooks/${cb.id}`} icon={<BookOpen className="h-4 w-4 shrink-0" />}>
                 {cb.name}
               </SidebarLink>
             ))}
