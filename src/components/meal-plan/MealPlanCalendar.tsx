@@ -172,7 +172,7 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
               lineHeight: 1.5,
             }}
           >
-            Drag a recipe onto a day. We'll roll the groceries up for you.
+            Drag a recipe onto a day. We&apos;ll roll the groceries up for you.
           </p>
         </div>
 

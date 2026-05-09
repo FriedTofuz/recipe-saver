@@ -51,7 +51,7 @@ export default function GroceryListPage() {
     }
   }
 
-  const items = list?.items ?? []
+  const items = useMemo(() => list?.items ?? [], [list])
   const totalCount = items.length
   const checkedCount = items.filter((i) => i.checked).length
 
