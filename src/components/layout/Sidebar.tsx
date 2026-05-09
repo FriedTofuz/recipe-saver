@@ -54,9 +54,9 @@ export async function Sidebar() {
     <aside
       className="hidden md:flex"
       style={{
-        width: 230,
+        width: 264,
         flexShrink: 0,
-        padding: '28px 18px 24px 24px',
+        padding: '28px 20px 24px 26px',
         borderRight: '1px solid var(--rule)',
         background: 'rgba(246,239,225,.4)',
         flexDirection: 'column',
@@ -242,7 +242,15 @@ export async function Sidebar() {
           >
             {email.split('@')[0] || 'You'}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+          <div
+            style={{
+              fontSize: 11,
+              color: 'var(--ink-faint)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
             {cookbookCount} {cookbookCount === 1 ? 'cookbook' : 'cookbooks'} · {recipeCount} {recipeCount === 1 ? 'recipe' : 'recipes'}
           </div>
         </div>

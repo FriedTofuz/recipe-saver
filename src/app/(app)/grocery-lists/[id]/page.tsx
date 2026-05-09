@@ -77,7 +77,7 @@ export default function GroceryListPage() {
   if (!list) return null
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+    <div style={{ maxWidth: 1100, position: 'relative' }}>
       {/* Back link */}
       <Link
         href="/grocery-lists"

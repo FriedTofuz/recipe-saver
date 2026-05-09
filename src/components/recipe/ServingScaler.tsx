@@ -12,6 +12,7 @@ interface ServingScalerProps {
   protein_g: number | null
   carbs_g: number | null
   fat_g: number | null
+  units: 'us' | 'metric'
 }
 
 const DOT_COLOR: Record<string, string> = {
@@ -30,9 +31,9 @@ export function ServingScaler({
   protein_g,
   carbs_g,
   fat_g,
+  units,
 }: ServingScalerProps) {
   const [servings, setServings] = useState(baseServings)
-  const [units, setUnits] = useState<'us' | 'metric'>('us')
   const [checked, setChecked] = useState<Set<string>>(new Set())
 
   const multiplier = servings / baseServings
@@ -47,40 +48,6 @@ export function ServingScaler({
 
   return (
     <div>
-      {/* US/Metric toggle */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
-        <div
-          style={{
-            display: 'inline-flex',
-            border: '1px solid var(--rule)',
-            borderRadius: 999,
-            padding: 2,
-            background: 'rgba(255,255,255,.5)',
-          }}
-        >
-          {(['us', 'metric'] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => setUnits(k)}
-              style={{
-                all: 'unset',
-                cursor: 'pointer',
-                padding: '3px 12px',
-                borderRadius: 999,
-                fontSize: 11,
-                letterSpacing: '.08em',
-                textTransform: 'uppercase',
-                fontFamily: 'var(--font-sans)',
-                background: units === k ? 'var(--ink)' : 'transparent',
-                color: units === k ? 'var(--paper)' : 'var(--ink-soft)',
-              }}
-            >
-              {k === 'us' ? 'US' : 'Metric'}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Serving scaler box */}
       <div
         style={{

@@ -16,12 +16,16 @@ interface RecipeDetailProps {
   recipe: Recipe
 }
 
+type Units = 'us' | 'metric'
+
 export function RecipeDetail({ recipe }: RecipeDetailProps) {
   const [cookingMode, setCookingMode] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [units, setUnits] = useState<Units>('us')
 
   const totalTime = (recipe.prep_time_mins ?? 0) + (recipe.cook_time_mins ?? 0)
   const hue = recipeHue(recipe.id)
+  const tools = recipe.tools ?? []
 
   async function handleDelete() {
     if (!confirm('Delete this recipe?')) return
@@ -46,7 +50,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '4px 0 40px' }}>
+    <div style={{ maxWidth: 1100, padding: '4px 0 40px' }}>
       {/* Back link */}
       <Link
         href="/dashboard"
@@ -275,7 +279,11 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       >
         {/* ── Ingredients column (sticky) ── */}
         <section style={{ position: 'sticky', top: 20, alignSelf: 'start' }}>
-          <SectionTitle kicker="What you need" title="Ingredients" />
+          <SectionTitle
+            kicker="What you need"
+            title="Ingredients"
+            right={<UnitsToggle value={units} onChange={setUnits} />}
+          />
 
           {recipe.ingredients && recipe.ingredients.length > 0 ? (
             <ServingScaler
@@ -285,10 +293,14 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               protein_g={recipe.protein_g}
               carbs_g={recipe.carbs_g}
               fat_g={recipe.fat_g}
+              units={units}
             />
           ) : (
             <p style={{ color: 'var(--ink-faint)', fontSize: 13 }}>No ingredients listed.</p>
           )}
+
+          {/* Tools section */}
+          <ToolsSection tools={tools} />
         </section>
 
         {/* ── Instructions column ── */}
@@ -345,6 +357,9 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
           ) : (
             <p style={{ color: 'var(--ink-faint)', fontSize: 13, marginTop: 22 }}>No steps listed.</p>
           )}
+
+          {/* Notes section */}
+          <NotesSection sourceUrl={recipe.source_url} />
         </section>
       </div>
     </div>
@@ -378,31 +393,259 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
+function SectionTitle({
+  kicker,
+  title,
+  right,
+}: {
+  kicker: string
+  title: string
+  right?: React.ReactNode
+}) {
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div
-        style={{
-          fontSize: 11,
-          letterSpacing: '.22em',
-          textTransform: 'uppercase',
-          color: 'var(--ink-faint)',
-        }}
-      >
-        {kicker}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        gap: 16,
+        marginBottom: 8,
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          {kicker}
+        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontWeight: 500,
+            fontSize: 30,
+            margin: '4px 0 0',
+            lineHeight: 1,
+            color: 'var(--ink)',
+          }}
+        >
+          {title}
+        </h2>
       </div>
-      <h2
-        style={{
-          fontFamily: 'var(--font-serif, Georgia, serif)',
-          fontWeight: 500,
-          fontSize: 30,
-          margin: '4px 0 0',
-          lineHeight: 1,
-          color: 'var(--ink)',
-        }}
-      >
-        {title}
-      </h2>
+      {right}
     </div>
   )
+}
+
+function UnitsToggle({ value, onChange }: { value: Units; onChange: (u: Units) => void }) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        border: '1px solid var(--rule)',
+        borderRadius: 999,
+        padding: 2,
+        background: 'rgba(255,255,255,.5)',
+      }}
+    >
+      {(['us', 'metric'] as const).map((k) => (
+        <button
+          key={k}
+          onClick={() => onChange(k)}
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            padding: '4px 12px',
+            borderRadius: 999,
+            fontSize: 11,
+            letterSpacing: '.08em',
+            textTransform: 'uppercase',
+            fontFamily: 'var(--font-sans)',
+            background: value === k ? 'var(--ink)' : 'transparent',
+            color: value === k ? 'var(--paper)' : 'var(--ink-soft)',
+          }}
+        >
+          {k === 'us' ? 'US' : 'Metric'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function ToolsSection({ tools }: { tools: string[] }) {
+  return (
+    <div style={{ marginTop: 26, paddingTop: 18, borderTop: '1px dashed var(--rule)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          style={{ color: 'var(--ink-soft)' }}
+        >
+          <path d="M14.7 6.3a4 4 0 015.6 5.6l-1.4 1.4-5.6-5.6 1.4-1.4z" />
+          <path d="M13.3 7.7L4 17v3h3l9.3-9.3" />
+        </svg>
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '.18em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          Tools you&apos;ll need
+        </div>
+      </div>
+      {tools.length > 0 ? (
+        <ul
+          style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 6,
+          }}
+        >
+          {tools.map((t) => (
+            <li
+              key={t}
+              style={{
+                fontSize: 13,
+                padding: '5px 10px',
+                border: '1px solid var(--rule)',
+                borderRadius: 999,
+                background: 'rgba(255,255,255,.4)',
+                color: 'var(--ink-soft)',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              {t}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13,
+            color: 'var(--ink-faint)',
+            fontStyle: 'italic',
+          }}
+        >
+          None listed for this recipe.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function NotesSection({ sourceUrl }: { sourceUrl: string | null }) {
+  return (
+    <div style={{ marginTop: 36 }}>
+      <div style={{ marginBottom: 14 }}>
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          Marginalia
+        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontWeight: 500,
+            fontSize: 30,
+            margin: '4px 0 0',
+            lineHeight: 1,
+            color: 'var(--ink)',
+          }}
+        >
+          Notes
+        </h2>
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gap: 14,
+        }}
+      >
+        {sourceUrl && (
+          <div
+            style={{
+              padding: '12px 14px',
+              background: 'rgba(255,255,255,.55)',
+              border: '1px solid var(--rule)',
+              borderRadius: 6,
+            }}
+          >
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                margin: 0,
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                lineHeight: 1.4,
+                color: 'var(--ink)',
+                textDecoration: 'none',
+                wordBreak: 'break-word',
+              }}
+            >
+              Source: <span style={{ color: 'var(--accent-ink)' }}>{prettyHost(sourceUrl)}</span>
+            </a>
+          </div>
+        )}
+        <button
+          type="button"
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            padding: '12px 14px',
+            border: '1.5px dashed var(--rule)',
+            borderRadius: 6,
+            color: 'var(--ink-faint)',
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontStyle: 'italic',
+            fontSize: 16,
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+        >
+          + jot a note
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function prettyHost(url: string): string {
+  try {
+    const u = new URL(url)
+    return u.hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
 }
