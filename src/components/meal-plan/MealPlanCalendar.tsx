@@ -128,7 +128,7 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
   })()
 
   return (
-    <div style={{ maxWidth: 1340, margin: '0 auto', position: 'relative' }}>
+    <div style={{ maxWidth: 1340, position: 'relative' }}>
       {/* Header */}
       <header
         style={{
@@ -245,28 +245,47 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '80px repeat(7, minmax(80px, 1fr))',
+              gridTemplateColumns: '108px repeat(7, minmax(110px, 1fr))',
               gap: 6,
-              minWidth: 720,
+              minWidth: 880,
             }}
           >
             <div />
-            {DAYS.map((d) => (
-              <div
-                key={d}
-                style={{
-                  textAlign: 'center',
-                  padding: '6px 4px',
-                  fontFamily: 'var(--font-serif, Georgia, serif)',
-                  fontSize: 14,
-                  fontStyle: 'italic',
-                  color: 'var(--ink-soft)',
-                  borderBottom: '1px solid var(--rule)',
-                }}
-              >
-                {d}
-              </div>
-            ))}
+            {DAYS.map((d, i) => {
+              const date = new Date(weekStart)
+              date.setDate(date.getDate() + i)
+              return (
+                <div
+                  key={d}
+                  style={{
+                    textAlign: 'center',
+                    padding: '6px 4px',
+                    fontFamily: 'var(--font-serif, Georgia, serif)',
+                    fontSize: 14,
+                    fontStyle: 'italic',
+                    color: 'var(--ink-soft)',
+                    borderBottom: '1px solid var(--rule)',
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span>{d}</span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontStyle: 'normal',
+                      fontSize: 12,
+                      color: 'var(--ink-faint)',
+                      letterSpacing: '.04em',
+                    }}
+                  >
+                    {date.getDate()}
+                  </span>
+                </div>
+              )
+            })}
 
             {MEALS.map((meal) => (
               <Row

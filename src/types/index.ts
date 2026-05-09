@@ -38,6 +38,7 @@ export interface Recipe {
   ingredients?: Ingredient[]
   steps?: Step[]
   cookbook_ids?: string[]
+  tools?: string[] | null
 }
 
 export interface Cookbook {

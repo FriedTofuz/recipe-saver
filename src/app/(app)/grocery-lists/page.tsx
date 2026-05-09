@@ -27,7 +27,7 @@ export default async function GroceryListsPage({
     : []
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+    <div style={{ maxWidth: 1100, position: 'relative' }}>
       <header
         style={{
           display: 'flex',

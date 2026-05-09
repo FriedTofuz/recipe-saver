@@ -60,7 +60,7 @@ export default function CookbooksPage() {
   const counts = data?.counts ?? new Map<string, number>()
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
+    <div style={{ maxWidth: 1200, position: 'relative' }}>
       {/* Page header */}
       <header
         style={{

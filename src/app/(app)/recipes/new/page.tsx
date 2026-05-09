@@ -3,7 +3,7 @@ import { WavyRule } from '@/components/paper'
 
 export default function NewRecipePage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1100 }}>
       <header style={{ marginBottom: 18 }}>
         <div
           style={{
