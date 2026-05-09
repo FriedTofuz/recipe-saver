@@ -9,15 +9,41 @@ interface RecipeGridProps {
 export function RecipeGrid({ recipes }: RecipeGridProps) {
   if (recipes.length === 0) {
     return (
-      <div className="text-center py-16 text-muted-foreground">
-        <p className="text-lg font-medium">No recipes yet</p>
-        <p className="text-sm mt-1">Add your first recipe to get started</p>
+      <div
+        style={{
+          marginTop: 24,
+          padding: '60px 24px',
+          borderRadius: 14,
+          border: '1.5px dashed var(--rule)',
+          textAlign: 'center',
+          color: 'var(--ink-soft)',
+          background: 'rgba(255,255,255,.3)',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontSize: 22,
+            marginBottom: 8,
+          }}
+        >
+          An empty page, awaiting.
+        </div>
+        <p style={{ margin: '0 auto 18px', maxWidth: 380, fontSize: 14, lineHeight: 1.5 }}>
+          Paste in a link from a blog you love, or write one from scratch.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+        gap: 24,
+      }}
+    >
       {recipes.map((recipe) => (
         <RecipeCard key={recipe.id} recipe={recipe} />
       ))}

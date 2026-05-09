@@ -2,9 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Clock, Users } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import { CoverWash, HandStars, recipeHue } from '@/components/paper'
 import type { Recipe } from '@/types'
 
 interface RecipeCardProps {
@@ -13,59 +11,138 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
   const totalTime = (recipe.prep_time_mins ?? 0) + (recipe.cook_time_mins ?? 0)
+  const hue = recipeHue(recipe.id)
 
   return (
-    <Link href={`/recipes/${recipe.id}`}>
-      <Card className="overflow-hidden hover:shadow-md transition-shadow group">
-        <div className="relative aspect-[4/3] bg-muted">
+    <Link href={`/recipes/${recipe.id}`} style={{ textDecoration: 'none' }}>
+      <div
+        className="lift"
+        style={{
+          background: 'rgba(255,255,255,.55)',
+          border: '1px solid var(--rule)',
+          borderRadius: 10,
+          overflow: 'hidden',
+          cursor: 'pointer',
+          position: 'relative',
+          boxShadow: 'var(--shadow-soft)',
+        }}
+      >
+        {/* Cover image or typographic placeholder */}
+        <div style={{ aspectRatio: '5/4', position: 'relative', overflow: 'hidden' }}>
           {recipe.cover_image ? (
             <Image
               src={recipe.cover_image}
               alt={recipe.title}
               fill
-              className="object-cover transition-transform group-hover:scale-105"
+              className="object-cover"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               onError={(e) => {
                 ;(e.target as HTMLImageElement).style.display = 'none'
               }}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-4xl text-muted-foreground/30">
-              🍽️
-            </div>
+            <CoverWash
+              title={recipe.title}
+              cuisine={recipe.cuisine ?? ''}
+              time={totalTime > 0 ? totalTime : undefined}
+              hue={hue}
+            />
           )}
-        </div>
 
-        <CardContent className="p-3 space-y-2">
-          <h3 className="font-semibold text-sm leading-tight line-clamp-2">{recipe.title}</h3>
-
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {totalTime > 0 && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {totalTime}m
+          {/* Overlay badges */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 10,
+              bottom: 8,
+              right: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            {recipe.cuisine && (
+              <span className="paper-chip" style={{ background: 'rgba(246,239,225,.85)' }}>
+                {recipe.cuisine}
               </span>
             )}
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {recipe.servings}
-            </span>
-            {recipe.calories && (
-              <span>{Math.round(recipe.calories)} kcal</span>
+            {totalTime > 0 && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-serif, Georgia, serif)',
+                  fontSize: 18,
+                  color: recipe.cover_image ? 'white' : 'inherit',
+                  textShadow: recipe.cover_image ? '0 1px 2px rgba(0,0,0,.35)' : 'none',
+                  lineHeight: 1,
+                }}
+              >
+                {totalTime}
+                <span style={{ fontSize: 12 }}>m</span>
+              </span>
             )}
           </div>
+        </div>
 
-          {recipe.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {recipe.tags.slice(0, 3).map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
+        {/* Card body */}
+        <div style={{ padding: '14px 16px 16px' }}>
+          <h3
+            style={{
+              fontFamily: 'var(--font-serif, Georgia, serif)',
+              fontWeight: 500,
+              fontSize: 18,
+              lineHeight: 1.2,
+              margin: '0 0 6px',
+              color: 'var(--ink)',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {recipe.title}
+          </h3>
+
+          {recipe.description && (
+            <p
+              style={{
+                margin: '0 0 10px',
+                color: 'var(--ink-soft)',
+                fontSize: 13,
+                lineHeight: 1.4,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {recipe.description}
+            </p>
+          )}
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 6,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {recipe.tags.slice(0, 2).map((tag) => (
+                <span key={tag} className="paper-chip">
                   {tag}
-                </Badge>
+                </span>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+            {recipe.servings && (
+              <span style={{ fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '.04em' }}>
+                serves {recipe.servings}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
     </Link>
   )
 }

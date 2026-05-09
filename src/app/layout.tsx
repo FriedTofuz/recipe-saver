@@ -1,23 +1,33 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Fraunces } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'My Recipes',
-  description: 'Your personal recipe manager',
+  title: 'marginalia — recipes worth keeping',
+  description: 'Your personal recipe collection',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'My Recipes',
+    title: 'marginalia',
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0f172a',
+  themeColor: '#2a241c',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -29,8 +39,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${fraunces.variable}`}>
+      <body style={{ fontFamily: 'var(--font-sans, ui-sans-serif, system-ui, sans-serif)' }}>
         {children}
         <Toaster richColors position="top-right" />
       </body>
