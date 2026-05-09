@@ -3,8 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { RecipeGrid } from '@/components/recipe/RecipeGrid'
 import { SearchBar } from '@/components/recipe/SearchBar'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { WavyRule, InkDoodle } from '@/components/paper'
 import type { Recipe } from '@/types'
 
 export default async function DashboardPage({
@@ -32,19 +31,111 @@ export default async function DashboardPage({
   const { data: recipes } = await query
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Recipes</h1>
-        <Button asChild>
-          <Link href="/recipes/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Recipe
+    <div>
+      {/* Page header */}
+      <header style={{ marginBottom: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            gap: 24,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 11,
+                letterSpacing: '.22em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-faint)',
+              }}
+            >
+              Volume I · {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-serif, Georgia, serif)',
+                fontWeight: 500,
+                fontSize: 52,
+                lineHeight: 1,
+                margin: '6px 0 0',
+                color: 'var(--ink)',
+              }}
+            >
+              Your <em style={{ fontStyle: 'italic' }}>recipes</em>
+            </h1>
+            <p
+              style={{
+                margin: '10px 0 0',
+                color: 'var(--ink-soft)',
+                maxWidth: 520,
+                fontSize: 15,
+                lineHeight: 1.5,
+              }}
+            >
+              A pantry of recipes — pulled from blogs, scribbled from memory, handed down.
+            </p>
+          </div>
+
+          <Link
+            href="/recipes/new"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '9px 16px',
+              borderRadius: 999,
+              border: '1px solid var(--accent-ink)',
+              background: 'var(--accent-ink)',
+              color: 'var(--paper)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              fontWeight: 500,
+              textDecoration: 'none',
+              flexShrink: 0,
+            }}
+          >
+            <InkDoodle kind="whisk" size={14} color="currentColor" />
+            New recipe
           </Link>
-        </Button>
-      </div>
-      <Suspense fallback={<div className="h-10 rounded-md border bg-muted animate-pulse" />}>
+        </div>
+      </header>
+
+      <WavyRule style={{ margin: '22px 0 24px' }} />
+
+      {/* Search */}
+      <Suspense fallback={<div style={{ height: 40, borderRadius: 999, background: 'rgba(255,255,255,.35)', border: '1px solid var(--rule)' }} />}>
         <SearchBar />
       </Suspense>
+
+      {/* Recipe section heading */}
+      <div style={{ marginTop: 28, marginBottom: 18 }}>
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          {searchParams.q ? 'Search results' : 'Recently saved'}
+        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontWeight: 500,
+            fontSize: 26,
+            margin: '4px 0 0',
+            color: 'var(--ink)',
+          }}
+        >
+          {searchParams.q
+            ? `${(recipes ?? []).length} matches`
+            : 'All recipes'}
+        </h2>
+      </div>
+
       <RecipeGrid recipes={(recipes as Recipe[]) ?? []} />
     </div>
   )

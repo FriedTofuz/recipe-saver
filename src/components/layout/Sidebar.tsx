@@ -2,12 +2,14 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarLink } from './SidebarLink'
 import { SidebarSignOut } from './SidebarSignOut'
-import { LayoutDashboard, Calendar, ShoppingCart, BookOpen, Plus, ChefHat } from 'lucide-react'
+import { InkDoodle } from '@/components/paper'
 
 const mainNav = [
-  { href: '/dashboard', label: 'My Recipes', icon: LayoutDashboard },
-  { href: '/meal-plan', label: 'Meal Plan', icon: Calendar },
-  { href: '/grocery-lists', label: 'Grocery Lists', icon: ShoppingCart },
+  { href: '/dashboard',     label: 'My Recipes',  doodle: 'cup'    as const },
+  { href: '/cookbooks',     label: 'Cookbooks',   doodle: 'book'   as const },
+  { href: '/meal-plan',     label: 'Meal Plan',   doodle: 'sprig'  as const },
+  { href: '/grocery-lists', label: 'Groceries',   doodle: 'tomato' as const },
+  { href: '/recipes/new',   label: 'Add Recipe',  doodle: 'whisk'  as const },
 ]
 
 export async function Sidebar() {
@@ -18,44 +20,111 @@ export async function Sidebar() {
     .order('name')
 
   return (
-    <aside className="hidden md:flex w-64 flex-col h-full border-r bg-muted/30">
-      <div className="flex items-center gap-2 px-4 h-16 border-b">
-        <ChefHat className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold">My Recipes</span>
-      </div>
-
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
-        <nav className="space-y-1">
-          {mainNav.map((item) => (
-            <SidebarLink key={item.href} href={item.href} icon={<item.icon className="h-4 w-4 shrink-0" />}>
-              {item.label}
-            </SidebarLink>
-          ))}
-        </nav>
-
+    <aside
+      style={{
+        width: 230,
+        flexShrink: 0,
+        padding: '28px 18px 24px 24px',
+        borderRight: '1px solid var(--rule)',
+        background: 'rgba(246,239,225,.4)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 18,
+        minHeight: '100%',
+      }}
+    >
+      {/* Brand */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <span
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 8,
+            background: 'var(--ink)',
+            color: 'var(--paper)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontStyle: 'italic',
+            fontWeight: 600,
+            fontSize: 20,
+            boxShadow: 'var(--shadow-soft)',
+            flexShrink: 0,
+          }}
+        >
+          m
+        </span>
         <div>
-          <div className="flex items-center justify-between px-3 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Cookbooks
-            </span>
-            <Link href="/cookbooks" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-3.5 w-3.5" />
-            </Link>
+          <div
+            style={{
+              fontFamily: 'var(--font-serif, Georgia, serif)',
+              fontSize: 21,
+              lineHeight: 1,
+              fontWeight: 500,
+              letterSpacing: '.01em',
+              color: 'var(--ink)',
+            }}
+          >
+            marginalia
           </div>
-          <nav className="space-y-1">
-            {(cookbooks ?? []).map((cb) => (
-              <SidebarLink key={cb.id} href={`/cookbooks/${cb.id}`} icon={<BookOpen className="h-4 w-4 shrink-0" />}>
-                {cb.name}
-              </SidebarLink>
-            ))}
-            {(cookbooks ?? []).length === 0 && (
-              <p className="px-3 py-1.5 text-xs text-muted-foreground">No cookbooks yet</p>
-            )}
-          </nav>
+          <div
+            style={{
+              fontSize: 10,
+              letterSpacing: '.16em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-faint)',
+              marginTop: 3,
+            }}
+          >
+            recipes worth keeping
+          </div>
         </div>
       </div>
 
-      <div className="border-t p-3">
+      {/* Main nav */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {mainNav.map((item) => (
+          <SidebarLink key={item.href} href={item.href} doodle={item.doodle}>
+            {item.label}
+          </SidebarLink>
+        ))}
+      </nav>
+
+      {/* Cookbooks section */}
+      {(cookbooks ?? []).length > 0 && (
+        <div>
+          <div
+            style={{
+              fontSize: 10,
+              letterSpacing: '.18em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-faint)',
+              paddingLeft: 12,
+              marginBottom: 6,
+            }}
+          >
+            Cookbooks
+          </div>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {cookbooks!.map((cb) => (
+              <SidebarLink key={cb.id} href={`/cookbooks/${cb.id}`} doodle="book">
+                {cb.name}
+              </SidebarLink>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      <div style={{ flex: 1 }} />
+
+      {/* Sign out */}
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px dashed var(--rule)',
+        }}
+      >
         <SidebarSignOut />
       </div>
     </aside>
