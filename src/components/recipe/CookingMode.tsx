@@ -31,13 +31,13 @@ export function CookingMode({ steps, ingredients, title, onClose }: CookingModeP
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === 'ArrowRight' || e.key === ' ') next()
-      if (e.key === 'ArrowLeft') prev()
+      if (e.key === 'ArrowRight' || e.key === ' ') setCurrentStep((s) => Math.min(steps.length - 1, s + 1))
+      if (e.key === 'ArrowLeft') setCurrentStep((s) => Math.max(0, s - 1))
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [])
+  }, [steps.length, onClose])
 
   const step = steps[currentStep]
 
