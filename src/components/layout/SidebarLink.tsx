@@ -3,15 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import type { LucideIcon } from 'lucide-react'
 
 interface SidebarLinkProps {
   href: string
-  icon: LucideIcon
+  icon: React.ReactNode
   children: React.ReactNode
 }
 
-export function SidebarLink({ href, icon: Icon, children }: SidebarLinkProps) {
+export function SidebarLink({ href, icon, children }: SidebarLinkProps) {
   const pathname = usePathname()
   const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
 
@@ -25,7 +24,7 @@ export function SidebarLink({ href, icon: Icon, children }: SidebarLinkProps) {
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      {icon}
       <span className="truncate">{children}</span>
     </Link>
   )
