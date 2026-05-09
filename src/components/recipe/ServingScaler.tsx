@@ -181,7 +181,7 @@ export function ServingScaler({
         })}
       </ul>
 
-      {(calories || protein_g || carbs_g || fat_g) && (
+      {hasNutrition({ calories, protein_g, carbs_g, fat_g }) && (
         <div style={{ marginTop: 22 }}>
           <div
             style={{
@@ -247,6 +247,20 @@ export function ServingScaler({
         </div>
       )}
     </div>
+  )
+}
+
+function hasNutrition(n: {
+  calories: number | null
+  protein_g: number | null
+  carbs_g: number | null
+  fat_g: number | null
+}): boolean {
+  return (
+    (n.calories != null && n.calories > 0) ||
+    (n.protein_g != null && n.protein_g > 0) ||
+    (n.carbs_g != null && n.carbs_g > 0) ||
+    (n.fat_g != null && n.fat_g > 0)
   )
 }
 

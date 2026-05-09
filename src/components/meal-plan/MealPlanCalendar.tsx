@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { upsertMealPlanSlot } from '@/actions/meal-plan'
 import { CoverWash, recipeHue, InkDoodle } from '@/components/paper'
 import { toast } from 'sonner'
@@ -29,6 +30,10 @@ interface MealPlanCalendarProps {
 }
 
 export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const pickRecipeId = searchParams.get('recipe')
+
   const [weekStart, setWeekStart] = useState(() => getISOMonday(new Date()))
   const [slots, setSlots] = useState<MealPlanSlot[]>(initialSlots)
   const [dragId, setDragId] = useState<string | null>(null)
@@ -36,6 +41,10 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
   const [drawerQuery, setDrawerQuery] = useState('')
 
   const weekStartStr = toDateStr(weekStart)
+  const pickRecipe = useMemo(
+    () => (pickRecipeId ? recipes.find((r) => r.id === pickRecipeId) ?? null : null),
+    [pickRecipeId, recipes]
+  )
 
   const filteredRecipes = useMemo(() => {
     const q = drawerQuery.trim().toLowerCase()
@@ -53,9 +62,8 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
     )
   }
 
-  async function onDrop(day: number, meal: 'breakfast' | 'lunch' | 'dinner') {
-    if (!dragId) return
-    const recipe = recipes.find((r) => r.id === dragId)
+  function applySlot(day: number, meal: 'breakfast' | 'lunch' | 'dinner', recipeId: string) {
+    const recipe = recipes.find((r) => r.id === recipeId)
     setSlots((prev) => {
       const filtered = prev.filter(
         (s) =>
@@ -69,14 +77,27 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
           week_start: weekStartStr,
           day_of_week: day,
           meal_type: meal,
-          recipe_id: dragId,
+          recipe_id: recipeId,
           recipe,
         },
       ]
     })
+  }
+
+  async function onDrop(day: number, meal: 'breakfast' | 'lunch' | 'dinner') {
+    if (!dragId) return
+    applySlot(day, meal, dragId)
     setDragId(null)
     setHoverKey(null)
     await upsertMealPlanSlot(weekStartStr, day, meal, dragId)
+  }
+
+  async function onSlotClick(day: number, meal: 'breakfast' | 'lunch' | 'dinner') {
+    if (!pickRecipeId) return
+    applySlot(day, meal, pickRecipeId)
+    await upsertMealPlanSlot(weekStartStr, day, meal, pickRecipeId)
+    toast.success(`Added "${pickRecipe?.title ?? 'recipe'}" to ${meal} on ${DAYS[day - 1]}`)
+    router.replace('/meal-plan')
   }
 
   async function onClear(day: number, meal: 'breakfast' | 'lunch' | 'dinner') {
@@ -116,16 +137,21 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
     )
     const params = new URLSearchParams()
     recipeIds.forEach((id) => id && params.append('recipe', id))
-    window.location.href = `/grocery-lists/new?${params.toString()}`
+    router.push(`/grocery-lists?${params.toString()}`)
   }
 
-  const totalRecipes = slots.filter((s) => s.week_start === weekStartStr && s.recipe_id).length
+  useEffect(() => {
+    if (!pickRecipeId) return
+    // Cancel pick-mode on Escape
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') router.replace('/meal-plan')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [pickRecipeId, router])
 
-  const weekLabel = (() => {
-    const we = new Date(weekStart)
-    we.setDate(we.getDate() + 6)
-    return `${MONTHS[weekStart.getMonth()]} ${weekStart.getDate()} – ${MONTHS[we.getMonth()]} ${we.getDate()}`
-  })()
+  const totalRecipes = slots.filter((s) => s.week_start === weekStartStr && s.recipe_id).length
+  const weekLabel = formatWeekRange(weekStart)
 
   return (
     <div style={{ maxWidth: 1340, position: 'relative' }}>
@@ -161,7 +187,7 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
               color: 'var(--ink)',
             }}
           >
-            The <em style={{ fontStyle: 'italic' }}>plan</em>
+            Your <em style={{ fontStyle: 'italic' }}>meal plan</em>
           </h1>
           <p
             style={{
@@ -176,7 +202,7 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={prevWeek} style={ghostBtn}>
             ← Prev week
           </button>
@@ -223,6 +249,57 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
         </svg>
       </div>
 
+      {/* Pick-mode banner */}
+      {pickRecipe && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '12px 16px',
+            marginBottom: 16,
+            border: '1px solid var(--accent-ink)',
+            background: 'rgba(182,86,42,.08)',
+            borderRadius: 10,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <InkDoodle kind="sprig" size={18} color="var(--accent-ink)" />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 11, letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>
+                Pick a slot
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-serif, Georgia, serif)',
+                  fontStyle: 'italic',
+                  fontSize: 18,
+                  color: 'var(--ink)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                Click any meal slot to schedule “{pickRecipe.title}”
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => router.replace('/meal-plan')}
+            style={{
+              all: 'unset',
+              cursor: 'pointer',
+              fontSize: 13,
+              color: 'var(--ink-soft)',
+              padding: '4px 10px',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <div
         style={{
           display: 'grid',
@@ -242,6 +319,40 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
             overflowX: 'auto',
           }}
         >
+          {/* "Week of …" headline above the schedule */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '0 6px 10px',
+              borderBottom: '1px dashed var(--rule)',
+              marginBottom: 10,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'var(--font-serif, Georgia, serif)',
+                fontStyle: 'italic',
+                fontSize: 18,
+                color: 'var(--ink)',
+              }}
+            >
+              Week of {weekLabel}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                letterSpacing: '.18em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-faint)',
+              }}
+            >
+              {weekStart.getFullYear()}
+            </div>
+          </div>
+
           <div
             style={{
               display: 'grid',
@@ -296,11 +407,13 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
                 setHoverKey={setHoverKey}
                 onDrop={onDrop}
                 onClear={onClear}
+                onSlotClick={onSlotClick}
                 onDragStart={(id) => setDragId(id)}
                 onDragEnd={() => {
                   setDragId(null)
                   setHoverKey(null)
                 }}
+                pickMode={Boolean(pickRecipe)}
               />
             ))}
           </div>
@@ -328,7 +441,7 @@ export function MealPlanCalendar({ initialSlots, recipes }: MealPlanCalendarProp
                 fontSize: 14,
               }}
             >
-              drag a recipe on the right →
+              {pickRecipe ? 'click a slot above ↑' : 'drag a recipe on the right →'}
             </span>
           </div>
         </div>
@@ -483,8 +596,10 @@ function Row({
   setHoverKey,
   onDrop,
   onClear,
+  onSlotClick,
   onDragStart,
   onDragEnd,
+  pickMode,
 }: {
   meal: 'breakfast' | 'lunch' | 'dinner'
   getSlot: (day: number, meal: string) => MealPlanSlot | undefined
@@ -492,8 +607,10 @@ function Row({
   setHoverKey: (k: string | null) => void
   onDrop: (day: number, meal: 'breakfast' | 'lunch' | 'dinner') => void
   onClear: (day: number, meal: 'breakfast' | 'lunch' | 'dinner') => void
+  onSlotClick: (day: number, meal: 'breakfast' | 'lunch' | 'dinner') => void
   onDragStart: (id: string) => void
   onDragEnd: () => void
+  pickMode: boolean
 }) {
   return (
     <>
@@ -501,8 +618,7 @@ function Row({
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
-          paddingRight: 10,
+          justifyContent: 'center',
           fontSize: 11,
           letterSpacing: '.18em',
           textTransform: 'uppercase',
@@ -527,6 +643,9 @@ function Row({
             }}
             onDragLeave={() => setHoverKey(hoverKey === key ? null : hoverKey)}
             onDrop={() => onDrop(day, meal)}
+            onClick={() => {
+              if (pickMode) onSlotClick(day, meal)
+            }}
             style={{
               minHeight: 86,
               borderRadius: 8,
@@ -535,9 +654,24 @@ function Row({
                 : 'repeating-linear-gradient(45deg, transparent 0 6px, rgba(120,90,60,.04) 6px 12px)',
               border: isOver
                 ? '2px dashed var(--accent-ink)'
+                : pickMode && !r
+                ? '1.5px solid var(--accent-ink)'
                 : '1px dashed var(--rule)',
               padding: 6,
               position: 'relative',
+              cursor: pickMode ? 'pointer' : 'default',
+              transition: 'background .15s, transform .15s',
+            }}
+            onMouseEnter={(e) => {
+              if (pickMode && !r) {
+                e.currentTarget.style.background = 'rgba(182,86,42,.08)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (pickMode && !r) {
+                e.currentTarget.style.background =
+                  'repeating-linear-gradient(45deg, transparent 0 6px, rgba(120,90,60,.04) 6px 12px)'
+              }
             }}
           >
             {r ? (
@@ -601,7 +735,10 @@ function Row({
                   </div>
                 </div>
                 <button
-                  onClick={() => onClear(day, meal)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onClear(day, meal)
+                  }}
                   aria-label="remove"
                   style={{
                     position: 'absolute',
@@ -638,7 +775,7 @@ function Row({
                   fontStyle: 'italic',
                 }}
               >
-                {isOver ? 'drop here' : '—'}
+                {isOver ? 'drop here' : pickMode ? 'click to add' : '—'}
               </div>
             )}
           </div>
@@ -646,6 +783,15 @@ function Row({
       })}
     </>
   )
+}
+
+function formatWeekRange(weekStart: Date): string {
+  const we = new Date(weekStart)
+  we.setDate(we.getDate() + 6)
+  const sameMonth = weekStart.getMonth() === we.getMonth()
+  const left = `${MONTHS[weekStart.getMonth()]} ${weekStart.getDate()}`
+  const right = sameMonth ? String(we.getDate()) : `${MONTHS[we.getMonth()]} ${we.getDate()}`
+  return `${left} – ${right}`
 }
 
 const ghostBtn: React.CSSProperties = {

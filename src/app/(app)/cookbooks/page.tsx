@@ -86,7 +86,7 @@ export default function CookbooksPage() {
             style={{
               fontFamily: 'var(--font-serif, Georgia, serif)',
               fontWeight: 500,
-              fontSize: 56,
+              fontSize: 52,
               lineHeight: 1,
               margin: '6px 0 0',
               color: 'var(--ink)',

@@ -3,24 +3,32 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Edit, Trash2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Edit, Trash2, BookOpen, CalendarPlus } from 'lucide-react'
 import { ServingScaler } from './ServingScaler'
 import { CookingMode } from './CookingMode'
 import { ShareButton } from '@/components/share/ShareButton'
 import { deleteRecipe } from '@/actions/recipe'
+import { setRecipeCookbooks, createCookbook } from '@/actions/cookbook'
 import { toast } from 'sonner'
 import { WavyRule, InkDoodle, CoverWash, recipeHue } from '@/components/paper'
-import type { Recipe } from '@/types'
+import { ConfirmDialog } from '@/components/paper/ConfirmDialog'
+import type { Recipe, Cookbook } from '@/types'
 
 interface RecipeDetailProps {
   recipe: Recipe
+  cookbooks?: Cookbook[]
+  cookbookIds?: string[]
 }
 
 type Units = 'us' | 'metric'
 
-export function RecipeDetail({ recipe }: RecipeDetailProps) {
+export function RecipeDetail({ recipe, cookbooks = [], cookbookIds = [] }: RecipeDetailProps) {
+  const router = useRouter()
   const [cookingMode, setCookingMode] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showCookbookPicker, setShowCookbookPicker] = useState(false)
   const [units, setUnits] = useState<Units>('us')
 
   const totalTime = (recipe.prep_time_mins ?? 0) + (recipe.cook_time_mins ?? 0)
@@ -28,13 +36,14 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
   const tools = recipe.tools ?? []
 
   async function handleDelete() {
-    if (!confirm('Delete this recipe?')) return
     setDeleting(true)
     try {
       await deleteRecipe(recipe.id)
+      toast.success('Recipe deleted')
     } catch {
       toast.error('Failed to delete recipe')
       setDeleting(false)
+      setShowDelete(false)
     }
   }
 
@@ -50,7 +59,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
   }
 
   return (
-    <div style={{ maxWidth: 1100, padding: '4px 0 40px' }}>
+    <div style={{ maxWidth: 1200, padding: '0 0 40px' }}>
       {/* Back link */}
       <Link
         href="/dashboard"
@@ -59,7 +68,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
           alignItems: 'center',
           gap: 6,
           padding: '4px 0',
-          marginBottom: 14,
+          marginBottom: 10,
           color: 'var(--ink-soft)',
           fontSize: 13,
           fontFamily: 'var(--font-sans)',
@@ -111,7 +120,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
         </div>
 
         {/* Title / meta */}
-        <div style={{ paddingTop: 4 }}>
+        <div style={{ paddingTop: 0 }}>
           <div
             style={{
               fontSize: 11,
@@ -121,13 +130,13 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               marginBottom: 6,
             }}
           >
-            {[recipe.cuisine, recipe.tags[0]].filter(Boolean).join(' · ')}
+            {recipe.cuisine ?? 'recipe'}
           </div>
 
           <h1
             style={{
               fontFamily: 'var(--font-serif, Georgia, serif)',
-              fontSize: 48,
+              fontSize: 52,
               fontWeight: 500,
               lineHeight: 1.02,
               margin: '0 0 12px',
@@ -179,70 +188,41 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
           )}
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               onClick={() => setCookingMode(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 16px',
-                borderRadius: 999,
-                border: '1px solid var(--accent-ink)',
-                background: 'var(--accent-ink)',
-                color: 'var(--paper)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
+              style={primaryBtn}
             >
               <InkDoodle kind="whisk" size={16} color="currentColor" />
               Start Cooking
             </button>
 
+            <button
+              onClick={() => router.push(`/meal-plan?recipe=${recipe.id}`)}
+              style={ghostBtn}
+            >
+              <CalendarPlus size={14} />
+              Add to plan
+            </button>
+
+            <button
+              onClick={() => setShowCookbookPicker(true)}
+              style={ghostBtn}
+            >
+              <BookOpen size={14} />
+              Add to cookbook
+            </button>
+
             <ShareButton recipeId={recipe.id} shareToken={recipe.share_token} />
 
-            <Link
-              href={`/recipes/${recipe.id}/edit`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 14px',
-                borderRadius: 999,
-                border: '1px solid var(--ink)',
-                background: 'transparent',
-                color: 'var(--ink)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                textDecoration: 'none',
-              }}
-            >
+            <Link href={`/recipes/${recipe.id}/edit`} style={iconBtn} aria-label="Edit recipe">
               <Edit size={14} />
-              Edit
             </Link>
 
             <button
-              onClick={handleDelete}
-              disabled={deleting}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 14px',
-                borderRadius: 999,
-                border: '1px solid var(--rule)',
-                background: 'transparent',
-                color: 'var(--ink-faint)',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                opacity: deleting ? 0.5 : 1,
-              }}
+              onClick={() => setShowDelete(true)}
+              style={iconBtn}
+              aria-label="Delete recipe"
             >
               <Trash2 size={14} />
             </button>
@@ -319,7 +299,6 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                     alignItems: 'flex-start',
                   }}
                 >
-                  {/* Step number */}
                   <div style={{ position: 'relative', paddingTop: 2 }}>
                     <span
                       style={{
@@ -362,6 +341,27 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
           <NotesSection sourceUrl={recipe.source_url} />
         </section>
       </div>
+
+      {/* Confirm delete */}
+      <ConfirmDialog
+        open={showDelete}
+        title={`Delete "${recipe.title}"?`}
+        message="This recipe and its ingredients, steps, and any meal-plan entries will be removed. This can't be undone."
+        confirmLabel={deleting ? 'Deleting…' : 'Delete recipe'}
+        cancelLabel="Keep it"
+        destructive
+        onConfirm={handleDelete}
+        onCancel={() => setShowDelete(false)}
+      />
+
+      {/* Cookbook picker */}
+      <CookbookPickerDialog
+        open={showCookbookPicker}
+        recipeId={recipe.id}
+        cookbooks={cookbooks}
+        initialSelected={cookbookIds}
+        onClose={() => setShowCookbookPicker(false)}
+      />
     </div>
   )
 }
@@ -641,6 +641,228 @@ function NotesSection({ sourceUrl }: { sourceUrl: string | null }) {
   )
 }
 
+function CookbookPickerDialog({
+  open,
+  recipeId,
+  cookbooks,
+  initialSelected,
+  onClose,
+}: {
+  open: boolean
+  recipeId: string
+  cookbooks: Cookbook[]
+  initialSelected: string[]
+  onClose: () => void
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(initialSelected))
+  const [list, setList] = useState<Cookbook[]>(cookbooks)
+  const [newName, setNewName] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await setRecipeCookbooks(recipeId, Array.from(selected))
+      toast.success('Cookbooks updated')
+      onClose()
+    } catch {
+      toast.error('Failed to update cookbooks')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleAddNew() {
+    const name = newName.trim()
+    if (!name) return
+    setSaving(true)
+    try {
+      const cb = await createCookbook(name)
+      setList((prev) => [...prev, cb as Cookbook].sort((a, b) => a.name.localeCompare(b.name)))
+      setSelected((prev) => {
+        const next = new Set(prev)
+        next.add(cb.id)
+        return next
+      })
+      setNewName('')
+    } catch {
+      toast.error('Failed to create cookbook')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!open) return null
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 70,
+        background: 'rgba(35,29,24,.45)',
+        backdropFilter: 'blur(2px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'var(--paper)',
+          border: '1px solid var(--rule)',
+          borderRadius: 10,
+          boxShadow: 'var(--shadow-card)',
+          maxWidth: 380,
+          width: '100%',
+          padding: '22px 24px 18px',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '.22em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-faint)',
+          }}
+        >
+          Save to
+        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--font-serif, Georgia, serif)',
+            fontWeight: 500,
+            fontSize: 24,
+            margin: '4px 0 12px',
+            color: 'var(--ink)',
+          }}
+        >
+          Add to a cookbook
+        </h2>
+        <div
+          className="scroll-y"
+          style={{
+            maxHeight: 220,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            marginBottom: 12,
+          }}
+        >
+          {list.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--ink-faint)', margin: '4px 0' }}>
+              No cookbooks yet — create one below.
+            </p>
+          ) : (
+            list.map((cb) => {
+              const on = selected.has(cb.id)
+              return (
+                <button
+                  key={cb.id}
+                  onClick={() => toggle(cb.id)}
+                  style={{
+                    all: 'unset',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    fontSize: 14,
+                    color: 'var(--ink)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,.55)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                >
+                  <span className={`paper-check ${on ? 'is-on' : ''}`}>
+                    {on && (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--paper)" strokeWidth="3" strokeLinecap="round">
+                        <path d="M5 12l5 5L20 7" />
+                      </svg>
+                    )}
+                  </span>
+                  <span>{cb.name}</span>
+                </button>
+              )
+            })
+          )}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            paddingTop: 12,
+            borderTop: '1px dashed var(--rule)',
+          }}
+        >
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                handleAddNew()
+              }
+            }}
+            placeholder="New cookbook…"
+            style={{
+              all: 'unset',
+              flex: 1,
+              padding: '6px 10px',
+              borderRadius: 6,
+              background: 'rgba(255,255,255,.6)',
+              border: '1px solid var(--rule)',
+              fontSize: 13,
+              color: 'var(--ink)',
+              fontFamily: 'var(--font-sans)',
+            }}
+          />
+          <button
+            onClick={handleAddNew}
+            disabled={!newName.trim() || saving}
+            style={{
+              all: 'unset',
+              cursor: newName.trim() && !saving ? 'pointer' : 'not-allowed',
+              padding: '6px 12px',
+              borderRadius: 6,
+              background: 'var(--ink)',
+              color: 'var(--paper)',
+              fontSize: 13,
+              opacity: !newName.trim() || saving ? 0.5 : 1,
+            }}
+          >
+            +
+          </button>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+          <button onClick={onClose} disabled={saving} style={ghostBtn}>
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving} style={primaryBtn}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function prettyHost(url: string): string {
   try {
     const u = new URL(url)
@@ -648,4 +870,53 @@ function prettyHost(url: string): string {
   } catch {
     return url
   }
+}
+
+const primaryBtn: React.CSSProperties = {
+  all: 'unset',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '8px 16px',
+  borderRadius: 999,
+  border: '1px solid var(--accent-ink)',
+  background: 'var(--accent-ink)',
+  color: 'var(--paper)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+}
+
+const ghostBtn: React.CSSProperties = {
+  all: 'unset',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '8px 14px',
+  borderRadius: 999,
+  border: '1px solid var(--ink)',
+  background: 'transparent',
+  color: 'var(--ink)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+  textDecoration: 'none',
+}
+
+const iconBtn: React.CSSProperties = {
+  all: 'unset',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 0,
+  padding: '8px 10px',
+  borderRadius: 999,
+  border: '1px solid var(--rule)',
+  background: 'transparent',
+  color: 'var(--ink-faint)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  cursor: 'pointer',
 }

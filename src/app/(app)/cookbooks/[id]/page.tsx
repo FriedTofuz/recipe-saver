@@ -35,7 +35,7 @@ export default async function CookbookPage({ params }: CookbookPageProps) {
   }
 
   return (
-    <div style={{ maxWidth: 1200 }}>
+    <div style={{ maxWidth: 1200, position: 'relative' }}>
       <Link
         href="/cookbooks"
         style={{

@@ -3,7 +3,7 @@ import { WavyRule } from '@/components/paper'
 
 export default function NewRecipePage() {
   return (
-    <div style={{ maxWidth: 1100 }}>
+    <div style={{ maxWidth: 1200 }}>
       <header style={{ marginBottom: 18 }}>
         <div
           style={{
@@ -19,7 +19,7 @@ export default function NewRecipePage() {
           style={{
             fontFamily: 'var(--font-serif, Georgia, serif)',
             fontWeight: 500,
-            fontSize: 48,
+            fontSize: 52,
             lineHeight: 1,
             margin: '6px 0 0',
             color: 'var(--ink)',

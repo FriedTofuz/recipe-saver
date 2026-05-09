@@ -31,7 +31,7 @@ export default async function DashboardPage({
   const { data: recipes } = await query
 
   return (
-    <div>
+    <div style={{ maxWidth: 1200 }}>
       {/* Page header */}
       <header style={{ marginBottom: 8 }}>
         <div

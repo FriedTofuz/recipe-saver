@@ -1,9 +1,6 @@
 'use client'
 
 import { useState, KeyboardEvent } from 'react'
-import { X } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 
 interface TagInputProps {
   tags: string[]
@@ -11,7 +8,7 @@ interface TagInputProps {
   placeholder?: string
 }
 
-export function TagInput({ tags, onChange, placeholder = 'Add tag…' }: TagInputProps) {
+export function TagInput({ tags, onChange, placeholder = 'Press enter to add a tag…' }: TagInputProps) {
   const [input, setInput] = useState('')
 
   function addTag(value: string) {
@@ -27,7 +24,7 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag…' }: TagInpu
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' || e.key === ',') {
+    if (e.key === 'Enter') {
       e.preventDefault()
       addTag(input)
     } else if (e.key === 'Backspace' && input === '' && tags.length > 0) {
@@ -36,26 +33,82 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag…' }: TagInpu
   }
 
   return (
-    <div className="flex flex-wrap gap-2 items-center p-2 border rounded-md bg-background min-h-10">
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 6,
+        padding: '6px 8px',
+        borderRadius: 10,
+        border: '1px solid var(--rule)',
+        background: 'rgba(255,255,255,.5)',
+        minHeight: 40,
+      }}
+    >
       {tags.map((tag) => (
-        <Badge key={tag} variant="secondary" className="flex items-center gap-1 pr-1">
+        <span
+          key={tag}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '3px 4px 3px 10px',
+            borderRadius: 999,
+            border: '1px solid var(--rule)',
+            background: 'var(--paper)',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 12,
+            color: 'var(--ink-soft)',
+            letterSpacing: '.04em',
+            textTransform: 'uppercase',
+          }}
+        >
           {tag}
           <button
             type="button"
             onClick={() => removeTag(tag)}
-            className="hover:text-destructive transition-colors"
+            aria-label={`Remove ${tag}`}
+            style={{
+              all: 'unset',
+              cursor: 'pointer',
+              width: 18,
+              height: 18,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              color: 'var(--ink-faint)',
+              fontSize: 14,
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(125,63,47,.12)'
+              e.currentTarget.style.color = '#7d3f2f'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.color = 'var(--ink-faint)'
+            }}
           >
-            <X className="h-3 w-3" />
+            ×
           </button>
-        </Badge>
+        </span>
       ))}
-      <Input
+      <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={() => input.trim() && addTag(input)}
         placeholder={tags.length === 0 ? placeholder : ''}
-        className="border-0 shadow-none h-auto p-0 text-sm focus-visible:ring-0 flex-1 min-w-20"
+        style={{
+          all: 'unset',
+          flex: 1,
+          minWidth: 140,
+          padding: '4px 6px',
+          fontSize: 13,
+          color: 'var(--ink)',
+          fontFamily: 'var(--font-sans)',
+        }}
       />
     </div>
   )

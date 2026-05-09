@@ -125,7 +125,7 @@ export default function GroceryListPage() {
             style={{
               fontFamily: 'var(--font-serif, Georgia, serif)',
               fontWeight: 500,
-              fontSize: 48,
+              fontSize: 52,
               lineHeight: 1,
               margin: '6px 0 0',
               color: 'var(--ink)',
