@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { RecipeGrid } from '@/components/recipe/RecipeGrid'
+import { SearchBar } from '@/components/recipe/SearchBar'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import type { Recipe } from '@/types'
@@ -40,6 +42,9 @@ export default async function DashboardPage({
           </Link>
         </Button>
       </div>
+      <Suspense fallback={<div className="h-10 rounded-md border bg-muted animate-pulse" />}>
+        <SearchBar />
+      </Suspense>
       <RecipeGrid recipes={(recipes as Recipe[]) ?? []} />
     </div>
   )
