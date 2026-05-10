@@ -4,147 +4,108 @@ import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { WavyRule } from '@/components/paper'
 import { ConfirmDialog } from '@/components/paper/ConfirmDialog'
-import { AisleCard } from './AisleCard'
+import { ItemRow } from './ItemRow'
+import { AddItemForm } from './AddItemForm'
 import { SuggestionsPanel } from './SuggestionsPanel'
 import { PrintList } from './PrintList'
 import {
-  addAisle,
   addItem,
   clearAllItems,
   clearCheckedItems,
-  reorderAisles,
+  reorderItems,
   updateItem,
 } from '@/actions/grocery'
-import type { GroceryAisle, GroceryItem, GrocerySuggestion } from '@/types'
-
-export type DragPayload =
-  | { type: 'suggestion'; suggestion: GrocerySuggestion }
-  | { type: 'item'; item: GroceryItem }
-  | { type: 'aisle'; aisleId: string }
-  | null
+import type { GroceryItem, GrocerySuggestion } from '@/types'
 
 interface GroceryPageProps {
-  initialAisles: GroceryAisle[]
   initialItems: GroceryItem[]
 }
 
-export function GroceryPage({ initialAisles, initialItems }: GroceryPageProps) {
-  const [aisles, setAisles] = useState<GroceryAisle[]>(initialAisles)
+export function GroceryPage({ initialItems }: GroceryPageProps) {
   const [items, setItems] = useState<GroceryItem[]>(initialItems)
-  const [drag, setDrag] = useState<DragPayload>(null)
-  const [hoverAisleId, setHoverAisleId] = useState<string | null>(null)
-  const [confirmClear, setConfirmClear] = useState(false)
-  const [addAisleOpen, setAddAisleOpen] = useState(false)
-  const [newAisleName, setNewAisleName] = useState('')
   const [hideChecked, setHideChecked] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [hoverId, setHoverId] = useState<string | null>(null)
 
   const totalCount = items.length
   const checkedCount = items.filter((i) => i.checked).length
 
-  const itemsByAisle = useMemo(() => {
-    const map = new Map<string | null, GroceryItem[]>()
-    for (const it of items) {
-      const k = it.aisle_id
-      if (!map.has(k)) map.set(k, [])
-      map.get(k)!.push(it)
-    }
-    Array.from(map.values()).forEach((list: GroceryItem[]) =>
-      list.sort((a, b) => a.sort_order - b.sort_order)
-    )
-    return map
+  // Render order: unchecked first (by sort_order), then checked at the bottom (by sort_order).
+  const renderOrder = useMemo(() => {
+    const unchecked = items.filter((i) => !i.checked).sort((a, b) => a.sort_order - b.sort_order)
+    const checked = items.filter((i) => i.checked).sort((a, b) => a.sort_order - b.sort_order)
+    return [...unchecked, ...checked]
   }, [items])
 
-  const uncategorized = itemsByAisle.get(null) ?? []
+  const visibleItems = hideChecked ? renderOrder.filter((i) => !i.checked) : renderOrder
 
-  const handleAddAisle = async () => {
-    const name = newAisleName.trim()
-    if (!name) return
-    try {
-      const created = await addAisle(name)
-      setAisles((prev) => [...prev, created])
-      setNewAisleName('')
-      setAddAisleOpen(false)
-    } catch {
-      toast.error('Could not add aisle')
-    }
-  }
-
-  const handleAddItem = useCallback(
-    async (aisleId: string | null, name: string) => {
-      const trimmed = name.trim()
-      if (!trimmed) return
-      try {
-        const created = await addItem({ aisle_id: aisleId, name: trimmed })
-        setItems((prev) => [...prev, created])
-      } catch {
-        toast.error('Could not add item')
-      }
+  const updateLocalItem = useCallback(
+    (id: string, patch: Partial<GroceryItem>) => {
+      setItems((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
     },
     []
   )
 
-  const handleAddSuggestion = useCallback(
-    async (suggestion: GrocerySuggestion, aisleId: string | null) => {
-      try {
-        const created = await addItem({
-          aisle_id: aisleId,
-          name: suggestion.name,
-          quantity: suggestion.quantity,
-          unit: suggestion.unit,
-          source_recipe: suggestion.recipe_title,
-        })
-        setItems((prev) => [...prev, created])
-      } catch {
-        toast.error('Could not add suggestion')
-      }
-    },
-    []
-  )
+  const removeLocalItem = useCallback((id: string) => {
+    setItems((prev) => prev.filter((p) => p.id !== id))
+  }, [])
 
-  const handleDropOnAisle = async (aisleId: string | null) => {
-    if (!drag) return
-    if (drag.type === 'suggestion') {
-      await handleAddSuggestion(drag.suggestion, aisleId)
-    } else if (drag.type === 'item') {
-      // Move item to this aisle
-      const it = drag.item
-      if (it.aisle_id === aisleId) return
-      setItems((prev) =>
-        prev.map((p) => (p.id === it.id ? { ...p, aisle_id: aisleId } : p))
-      )
-      try {
-        await updateItem(it.id, { aisle_id: aisleId })
-      } catch {
-        toast.error('Could not move item')
-      }
+  const replaceLocalItem = useCallback((next: GroceryItem) => {
+    setItems((prev) => {
+      const idx = prev.findIndex((p) => p.id === next.id)
+      if (idx === -1) return [...prev, next]
+      const out = [...prev]
+      out[idx] = next
+      return out
+    })
+  }, [])
+
+  const handleAddManual = async (input: {
+    name: string
+    quantity: string | null
+    unit: string | null
+  }) => {
+    if (!input.name.trim()) return
+    try {
+      const { item } = await addItem({
+        name: input.name,
+        quantity: input.quantity,
+        unit: input.unit,
+        // Manual adds: never merge — let user create explicit duplicates if they want
+        mergeOnDuplicate: false,
+      })
+      setItems((prev) => [...prev, item])
+    } catch {
+      toast.error('Could not add item')
     }
-    setDrag(null)
-    setHoverAisleId(null)
   }
 
-  const handleAisleDrop = async (targetAisleId: string) => {
-    if (!drag || drag.type !== 'aisle') return
-    if (drag.aisleId === targetAisleId) return
-    const next = [...aisles]
-    const fromIdx = next.findIndex((a) => a.id === drag.aisleId)
-    const toIdx = next.findIndex((a) => a.id === targetAisleId)
-    if (fromIdx === -1 || toIdx === -1) return
-    const [moved] = next.splice(fromIdx, 1)
-    next.splice(toIdx, 0, moved)
-    setAisles(next)
+  const handleAddSuggestion = async (suggestion: GrocerySuggestion) => {
     try {
-      await reorderAisles(next.map((a) => a.id))
+      const { item, merged } = await addItem({
+        name: suggestion.name,
+        quantity: suggestion.quantity,
+        unit: suggestion.unit,
+        source_recipe: suggestion.recipe_title,
+        mergeOnDuplicate: true,
+      })
+      if (merged) {
+        replaceLocalItem(item)
+      } else {
+        setItems((prev) => [...prev, item])
+      }
     } catch {
-      toast.error('Could not reorder aisles')
+      toast.error('Could not add item')
     }
-    setDrag(null)
   }
 
   const handleClearChecked = async () => {
+    const removed = checkedCount
     setItems((prev) => prev.filter((i) => !i.checked))
     try {
       await clearCheckedItems()
-      toast.success(`Cleared ${checkedCount} checked ${checkedCount === 1 ? 'item' : 'items'}`)
+      toast.success(`Cleared ${removed} checked ${removed === 1 ? 'item' : 'items'}`)
     } catch {
       toast.error('Could not clear items')
     }
@@ -161,35 +122,44 @@ export function GroceryPage({ initialAisles, initialItems }: GroceryPageProps) {
     }
   }
 
-  const handlePrint = () => {
-    window.print()
+  const handlePrint = () => window.print()
+
+  const onDragOverItem = (id: string, e: React.DragEvent<HTMLLIElement>) => {
+    e.preventDefault()
+    if (!draggingId || draggingId === id) return
+    setHoverId(id)
   }
 
-  const updateLocalItem = useCallback(
-    (id: string, patch: Partial<GroceryItem>) => {
-      setItems((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
-    },
-    []
-  )
+  const onDropOnItem = async (targetId: string) => {
+    if (!draggingId || draggingId === targetId) {
+      setHoverId(null)
+      return
+    }
+    // Reorder draggingId to targetId's position within unchecked items.
+    const unchecked = items.filter((i) => !i.checked)
+    const checked = items.filter((i) => i.checked)
+    const orderedUnchecked = [...unchecked].sort((a, b) => a.sort_order - b.sort_order)
+    const fromIdx = orderedUnchecked.findIndex((i) => i.id === draggingId)
+    const toIdx = orderedUnchecked.findIndex((i) => i.id === targetId)
+    if (fromIdx === -1 || toIdx === -1) {
+      setHoverId(null)
+      return
+    }
+    const [moved] = orderedUnchecked.splice(fromIdx, 1)
+    orderedUnchecked.splice(toIdx, 0, moved)
+    // Re-assign sort_order across unchecked items
+    const renumbered = orderedUnchecked.map((it, idx) => ({ ...it, sort_order: idx }))
+    setItems([...renumbered, ...checked])
+    setDraggingId(null)
+    setHoverId(null)
+    try {
+      await reorderItems(renumbered.map((i) => i.id))
+    } catch {
+      toast.error('Could not save order')
+    }
+  }
 
-  const removeLocalItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((p) => p.id !== id))
-  }, [])
-
-  const updateLocalAisle = useCallback(
-    (id: string, patch: Partial<GroceryAisle>) => {
-      setAisles((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
-    },
-    []
-  )
-
-  const removeLocalAisle = useCallback((id: string) => {
-    setAisles((prev) => prev.filter((p) => p.id !== id))
-    // Items in that aisle become uncategorized (matches DB behavior).
-    setItems((prev) =>
-      prev.map((p) => (p.aisle_id === id ? { ...p, aisle_id: null } : p))
-    )
-  }, [])
+  const existingItemNames = useMemo(() => items.map((i) => i.name), [items])
 
   return (
     <div className="grocery-screen" style={{ maxWidth: 1280, position: 'relative' }}>
@@ -237,22 +207,12 @@ export function GroceryPage({ initialAisles, initialItems }: GroceryPageProps) {
             }}
           >
             Your perpetual list. Suggestions on the right pull from your meal
-            plan — drag them onto an aisle to add.
+            plan — tap <em>Add</em> to drop them in.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => setAddAisleOpen(true)} style={ghostBtn} title="Add a new aisle">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            New aisle
-          </button>
-          <button
-            onClick={() => setHideChecked((v) => !v)}
-            style={ghostBtn}
-            title="Toggle checked-item visibility"
-          >
+          <button onClick={() => setHideChecked((v) => !v)} style={ghostBtn}>
             {hideChecked ? 'Show checked' : 'Hide checked'}
           </button>
           {checkedCount > 0 && (
@@ -282,220 +242,99 @@ export function GroceryPage({ initialAisles, initialItems }: GroceryPageProps) {
         }}
         className="grocery-grid"
       >
-        {/* Aisle list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {aisles.length === 0 && uncategorized.length === 0 && (
-            <div
-              style={{
-                padding: '60px 24px',
-                borderRadius: 14,
-                border: '1.5px dashed var(--rule)',
-                textAlign: 'center',
-                color: 'var(--ink-soft)',
-                background: 'rgba(255,255,255,.3)',
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: 'var(--font-serif, Georgia, serif)',
-                  fontSize: 22,
-                  color: 'var(--ink)',
-                }}
-              >
-                No aisles yet.
-              </div>
-              <p style={{ margin: '8px auto 0', maxWidth: 380, fontSize: 14, lineHeight: 1.5 }}>
-                Add an aisle to start filling your list, or drag a suggestion in.
-              </p>
-            </div>
-          )}
-
-          {aisles.map((aisle) => {
-            const aisleItems = itemsByAisle.get(aisle.id) ?? []
-            return (
-              <AisleCard
-                key={aisle.id}
-                aisle={aisle}
-                items={aisleItems}
-                hideChecked={hideChecked}
-                isDropTarget={hoverAisleId === aisle.id && (drag?.type === 'suggestion' || drag?.type === 'item')}
-                isAisleDragTarget={hoverAisleId === aisle.id && drag?.type === 'aisle' && drag.aisleId !== aisle.id}
-                onDragOver={(type) => {
-                  if (type === 'aisle' && drag?.type === 'aisle') {
-                    setHoverAisleId(aisle.id)
-                  } else if (drag?.type === 'suggestion' || drag?.type === 'item') {
-                    setHoverAisleId(aisle.id)
-                  }
-                }}
-                onDragLeave={() => setHoverAisleId(null)}
-                onDrop={() => {
-                  if (drag?.type === 'aisle') {
-                    return handleAisleDrop(aisle.id)
-                  }
-                  return handleDropOnAisle(aisle.id)
-                }}
-                onAisleDragStart={() => setDrag({ type: 'aisle', aisleId: aisle.id })}
-                onAisleDragEnd={() => {
-                  setDrag(null)
-                  setHoverAisleId(null)
-                }}
-                onItemDragStart={(item) => setDrag({ type: 'item', item })}
-                onItemDragEnd={() => {
-                  setDrag(null)
-                  setHoverAisleId(null)
-                }}
-                onAddItem={(name) => handleAddItem(aisle.id, name)}
-                onItemUpdate={updateLocalItem}
-                onItemRemove={removeLocalItem}
-                onAisleUpdate={updateLocalAisle}
-                onAisleRemove={removeLocalAisle}
-              />
-            )
-          })}
-
-          {/* Uncategorized bucket — only show if it has items */}
-          {uncategorized.length > 0 && (
-            <AisleCard
-              aisle={{
-                id: '__uncategorized',
-                user_id: '',
-                name: 'Uncategorized',
-                sort_order: 9999,
-                created_at: '',
-              }}
-              items={uncategorized}
-              hideChecked={hideChecked}
-              uncategorized
-              isDropTarget={hoverAisleId === '__uncategorized' && (drag?.type === 'suggestion' || drag?.type === 'item')}
-              isAisleDragTarget={false}
-              onDragOver={() => {
-                if (drag?.type === 'suggestion' || drag?.type === 'item') {
-                  setHoverAisleId('__uncategorized')
-                }
-              }}
-              onDragLeave={() => setHoverAisleId(null)}
-              onDrop={() => handleDropOnAisle(null)}
-              onAisleDragStart={() => undefined}
-              onAisleDragEnd={() => undefined}
-              onItemDragStart={(item) => setDrag({ type: 'item', item })}
-              onItemDragEnd={() => {
-                setDrag(null)
-                setHoverAisleId(null)
-              }}
-              onAddItem={(name) => handleAddItem(null, name)}
-              onItemUpdate={updateLocalItem}
-              onItemRemove={removeLocalItem}
-              onAisleUpdate={() => undefined}
-              onAisleRemove={() => undefined}
-            />
-          )}
-        </div>
-
-        <SuggestionsPanel
-          aisles={aisles}
-          drag={drag}
-          setDrag={setDrag}
-          existingItemNames={items.map((i) => i.name)}
-          onAddToAisle={handleAddSuggestion}
-        />
-      </div>
-
-      {/* Add-aisle dialog */}
-      {addAisleOpen && (
-        <div
+        {/* Flat list */}
+        <section
           style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 70,
-            background: 'rgba(35,29,24,.45)',
-            backdropFilter: 'blur(2px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
+            background: 'rgba(255,255,255,.5)',
+            border: '1px solid var(--rule)',
+            borderRadius: 10,
+            padding: '18px 22px 16px',
+            position: 'relative',
+            boxShadow: 'var(--shadow-soft)',
           }}
-          onClick={() => setAddAisleOpen(false)}
         >
+          <AddItemForm onAdd={handleAddManual} />
+
           <div
-            onClick={(e) => e.stopPropagation()}
             style={{
-              background: 'var(--paper)',
-              border: '1px solid var(--rule)',
-              borderRadius: 10,
-              boxShadow: 'var(--shadow-card)',
-              maxWidth: 420,
-              width: '100%',
-              padding: '24px 26px 22px',
+              fontSize: 11,
+              letterSpacing: '.18em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-faint)',
+              margin: '14px 0 6px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'baseline',
             }}
           >
+            <span>List</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12, letterSpacing: 0, textTransform: 'none' }}>
+              {checkedCount}/{totalCount}
+            </span>
+          </div>
+
+          {visibleItems.length === 0 ? (
             <div
               style={{
-                fontSize: 11,
-                letterSpacing: '.22em',
-                textTransform: 'uppercase',
+                padding: '40px 12px',
+                textAlign: 'center',
                 color: 'var(--ink-faint)',
-              }}
-            >
-              New aisle
-            </div>
-            <h2
-              style={{
                 fontFamily: 'var(--font-serif, Georgia, serif)',
-                fontWeight: 500,
-                fontSize: 26,
-                margin: '4px 0 14px',
-                color: 'var(--ink)',
-                lineHeight: 1.15,
+                fontStyle: 'italic',
+                fontSize: 15,
               }}
             >
-              Add a category
-            </h2>
-            <input
-              autoFocus
-              value={newAisleName}
-              onChange={(e) => setNewAisleName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddAisle()
-                if (e.key === 'Escape') setAddAisleOpen(false)
-              }}
-              placeholder="Bulk bins, frozen, snacks…"
-              style={{
-                all: 'unset',
-                display: 'block',
-                width: '100%',
-                boxSizing: 'border-box',
-                padding: '10px 12px',
-                borderRadius: 8,
-                background: 'rgba(255,255,255,.55)',
-                border: '1px solid var(--rule)',
-                fontSize: 14,
-                color: 'var(--ink)',
-                fontFamily: 'var(--font-sans)',
-              }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
-              <button onClick={() => setAddAisleOpen(false)} style={ghostBtn}>
-                Cancel
-              </button>
-              <button onClick={handleAddAisle} disabled={!newAisleName.trim()} style={primaryBtn}>
-                Add aisle
-              </button>
+              {totalCount === 0
+                ? 'Empty list — add items above or from suggestions.'
+                : 'Everything checked off.'}
             </div>
-          </div>
-        </div>
-      )}
+          ) : (
+            <ul
+              style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              {visibleItems.map((it) => (
+                <ItemRow
+                  key={it.id}
+                  item={it}
+                  isHover={hoverId === it.id}
+                  onUpdate={updateLocalItem}
+                  onRemove={removeLocalItem}
+                  onDragStart={() => setDraggingId(it.id)}
+                  onDragEnd={() => {
+                    setDraggingId(null)
+                    setHoverId(null)
+                  }}
+                  onDragOver={(e) => onDragOverItem(it.id, e)}
+                  onDrop={() => onDropOnItem(it.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <SuggestionsPanel
+          existingItemNames={existingItemNames}
+          onAdd={handleAddSuggestion}
+        />
+      </div>
 
       <ConfirmDialog
         open={confirmClear}
         title="Clear the whole list?"
-        message="This removes every item, in every aisle. Aisle categories are kept."
+        message="This removes every item, checked or not."
         confirmLabel="Clear list"
         destructive
         onConfirm={handleClearAll}
         onCancel={() => setConfirmClear(false)}
       />
 
-      <PrintList aisles={aisles} items={items} uncategorized={uncategorized} />
+      <PrintList items={items} />
     </div>
   )
 }
@@ -524,21 +363,6 @@ const dangerBtn: React.CSSProperties = {
   border: '1px solid #7d3f2f',
   background: 'transparent',
   color: '#7d3f2f',
-  fontFamily: 'var(--font-sans)',
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: 'pointer',
-}
-
-const primaryBtn: React.CSSProperties = {
-  all: 'unset',
-  display: 'inline-flex',
-  alignItems: 'center',
-  padding: '8px 16px',
-  borderRadius: 999,
-  border: '1px solid var(--accent-ink)',
-  background: 'var(--accent-ink)',
-  color: 'var(--paper)',
   fontFamily: 'var(--font-sans)',
   fontSize: 13,
   fontWeight: 500,

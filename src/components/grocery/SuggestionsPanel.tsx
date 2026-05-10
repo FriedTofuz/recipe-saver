@@ -2,19 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import type { GroceryAisle, GrocerySuggestion } from '@/types'
-import type { DragPayload } from './GroceryPage'
+import type { GrocerySuggestion } from '@/types'
 import { dedupeSuggestions } from '@/lib/grocery-suggestions'
 
 interface SuggestionsPanelProps {
-  aisles: GroceryAisle[]
-  drag: DragPayload
-  setDrag: (d: DragPayload) => void
   existingItemNames: string[]
-  onAddToAisle: (
-    suggestion: GrocerySuggestion,
-    aisleId: string | null
-  ) => void | Promise<void>
+  onAdd: (suggestion: GrocerySuggestion) => void | Promise<void>
 }
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -41,13 +34,7 @@ function shortDate(iso: string): string {
   return `${DAY_LABELS[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`
 }
 
-export function SuggestionsPanel({
-  aisles,
-  drag,
-  setDrag,
-  existingItemNames,
-  onAddToAisle,
-}: SuggestionsPanelProps) {
+export function SuggestionsPanel({ existingItemNames, onAdd }: SuggestionsPanelProps) {
   const [start, setStart] = useState(defaultStart)
   const [end, setEnd] = useState(defaultEnd)
   const [rawSuggestions, setRawSuggestions] = useState<GrocerySuggestion[]>([])
@@ -59,9 +46,7 @@ export function SuggestionsPanel({
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(
-        `/api/grocery/suggestions?start=${start}&end=${end}`
-      )
+      const res = await fetch(`/api/grocery/suggestions?start=${start}&end=${end}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to load')
       setRawSuggestions(data.suggestions ?? [])
@@ -76,7 +61,7 @@ export function SuggestionsPanel({
     void fetchSuggestions()
   }, [fetchSuggestions])
 
-  // Re-dedupe locally as the user adds items so suggestions disappear immediately.
+  // Re-dedupe locally so suggestions vanish immediately as items are added.
   const suggestions = useMemo(
     () => dedupeSuggestions(rawSuggestions, existingItemNames.map((n) => ({ name: n }))),
     [rawSuggestions, existingItemNames]
@@ -113,24 +98,10 @@ export function SuggestionsPanel({
 
   const handleAddAll = async (group: typeof groupedByRecipe[number]) => {
     for (const s of group.items) {
-      // Default to "Other" aisle (last in default seed) — find any aisle named "Other"
-      // or fall back to the first aisle, or null.
-      const target =
-        aisles.find((a) => a.name.toLowerCase() === 'other') ??
-        aisles[aisles.length - 1] ??
-        null
       // eslint-disable-next-line no-await-in-loop
-      await onAddToAisle(s, target?.id ?? null)
+      await onAdd(s)
     }
     toast.success(`Added ${group.items.length} from "${group.recipe_title}"`)
-  }
-
-  const handleAddOne = async (s: GrocerySuggestion) => {
-    const target =
-      aisles.find((a) => a.name.toLowerCase() === 'other') ??
-      aisles[aisles.length - 1] ??
-      null
-    await onAddToAisle(s, target?.id ?? null)
   }
 
   return (
@@ -179,7 +150,6 @@ export function SuggestionsPanel({
           </div>
         </div>
 
-        {/* Date range */}
         <div
           style={{
             display: 'grid',
@@ -216,7 +186,9 @@ export function SuggestionsPanel({
           }}
         >
           <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
-            {loading ? 'Loading…' : `${suggestions.length} ${suggestions.length === 1 ? 'item' : 'items'}`}
+            {loading
+              ? 'Loading…'
+              : `${suggestions.length} ${suggestions.length === 1 ? 'item' : 'items'}`}
           </div>
           <button
             onClick={fetchSuggestions}
@@ -320,54 +292,23 @@ export function SuggestionsPanel({
                     {g.items.map((s) => (
                       <li
                         key={s.key}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.effectAllowed = 'copy'
-                          setDrag({ type: 'suggestion', suggestion: s })
-                        }}
-                        onDragEnd={() => setDrag(null)}
-                        onDoubleClick={() => void handleAddOne(s)}
-                        title="Drag to an aisle, or double-click to add"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 8,
                           padding: '4px 6px',
                           borderRadius: 5,
-                          cursor: 'grab',
                           fontSize: 13,
                           fontFamily: 'var(--font-sans)',
                           color: 'var(--ink)',
-                          background:
-                            drag?.type === 'suggestion' && drag.suggestion.key === s.key
-                              ? 'rgba(182,86,42,.12)'
-                              : 'transparent',
                         }}
                         onMouseEnter={(e) => {
-                          if (!(drag?.type === 'suggestion' && drag.suggestion.key === s.key)) {
-                            e.currentTarget.style.background = 'rgba(255,255,255,.55)'
-                          }
+                          e.currentTarget.style.background = 'rgba(255,255,255,.55)'
                         }}
                         onMouseLeave={(e) => {
-                          if (!(drag?.type === 'suggestion' && drag.suggestion.key === s.key)) {
-                            e.currentTarget.style.background = 'transparent'
-                          }
+                          e.currentTarget.style.background = 'transparent'
                         }}
                       >
-                        <svg
-                          width="10"
-                          height="10"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          style={{ color: 'var(--ink-faint)', flexShrink: 0 }}
-                        >
-                          <circle cx="9" cy="6" r="1.4" />
-                          <circle cx="15" cy="6" r="1.4" />
-                          <circle cx="9" cy="12" r="1.4" />
-                          <circle cx="15" cy="12" r="1.4" />
-                          <circle cx="9" cy="18" r="1.4" />
-                          <circle cx="15" cy="18" r="1.4" />
-                        </svg>
                         <span style={{ flex: 1, minWidth: 0 }}>
                           {(s.quantity || s.unit) && (
                             <strong style={{ color: 'var(--accent-ink)', marginRight: 4 }}>
@@ -376,6 +317,17 @@ export function SuggestionsPanel({
                           )}
                           {s.name}
                         </span>
+                        <button
+                          onClick={() => void onAdd(s)}
+                          style={addBtn}
+                          aria-label={`Add ${s.name}`}
+                          title="Add to list"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                            <path d="M12 5v14M5 12h14" />
+                          </svg>
+                          Add
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -397,7 +349,7 @@ export function SuggestionsPanel({
             textAlign: 'center',
           }}
         >
-          drag onto an aisle, or double-click to drop into Other
+          shared ingredients merge into one line on your list
         </div>
       </div>
     </aside>
@@ -456,5 +408,21 @@ const tinyBtn: React.CSSProperties = {
   padding: '2px 8px',
   border: '1px solid var(--accent-ink)',
   borderRadius: 999,
+  flexShrink: 0,
+}
+
+const addBtn: React.CSSProperties = {
+  all: 'unset',
+  cursor: 'pointer',
+  fontSize: 11,
+  color: 'var(--accent-ink)',
+  fontFamily: 'var(--font-sans)',
+  fontWeight: 500,
+  padding: '2px 7px',
+  border: '1px solid var(--accent-ink)',
+  borderRadius: 999,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 3,
   flexShrink: 0,
 }

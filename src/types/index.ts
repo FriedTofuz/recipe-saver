@@ -61,21 +61,13 @@ export interface MealPlanSlot {
   recipe?: Recipe
 }
 
-export interface GroceryAisle {
-  id: string
-  user_id: string
-  name: string
-  sort_order: number
-  created_at: string
-}
-
 export interface GroceryItem {
   id: string
   user_id: string
-  aisle_id: string | null
   name: string
   quantity: string | null
   unit: string | null
+  /** Comma-separated recipe titles; null when item was added manually. */
   source_recipe: string | null
   checked: boolean
   sort_order: number
