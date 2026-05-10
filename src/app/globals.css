@@ -155,3 +155,43 @@
 .scroll-y::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ── Print: clean grocery list, ink-friendly ── */
+.print-only { display: none; }
+
+@media print {
+  @page {
+    margin: 0.5in;
+    size: auto;
+  }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  /* Hide every painted pixel except the print block */
+  body * { visibility: hidden; }
+  .print-only, .print-only * { visibility: visible; }
+  .print-only {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff !important;
+    color: #000 !important;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .print-only *,
+  .print-only h1,
+  .print-only h2,
+  .print-only li,
+  .print-only div,
+  .print-only span,
+  .print-only strong {
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
